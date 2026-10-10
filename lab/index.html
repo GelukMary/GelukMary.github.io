@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>端内订阅商业化 AB Test Lab · 王曼鹂</title>
+<style>
+:root{--ink:#1a1a1a;--muted:#6b6b6b;--line:#e5e5e5;--accent:#1f6feb;--soft:#f7f7f5;--ok:#1a7f37;--warn:#b35900;--bad:#c62828}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;color:var(--ink);line-height:1.7;background:#fff}
+.container{max-width:1120px;margin:0 auto;padding:0 20px}
+header{border-bottom:1px solid var(--line);padding:18px 0;margin-bottom:26px}
+.topline{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.back{color:var(--muted);font-size:14px;text-decoration:none}
+.back:hover{color:var(--ink)}
+h1{font-size:28px;margin-bottom:6px}
+.sub{color:var(--muted);font-size:14px;margin-bottom:22px}
+.card{border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:18px}
+.card h2{font-size:18px;margin-bottom:6px}
+.card h3{font-size:15px;margin:18px 0 10px}
+.card .hint{font-size:13px;color:var(--muted);margin-bottom:14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.param label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:3px}
+.param input,.param select{padding:5px 7px;border:1px solid var(--line);border-radius:7px;font-size:13.5px;background:#fff;width:100%}
+.param{margin-bottom:8px}
+table.inp{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+table.inp th,table.inp td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+table.inp th{color:var(--muted);font-weight:600;background:var(--soft);white-space:nowrap}
+table.inp input,table.inp select{width:100%;padding:4px 6px;border:1px solid var(--line);border-radius:6px;font-size:13px}
+table.inp td.calc{color:#555;font-weight:600;white-space:nowrap}
+.outputs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:16px}
+.metric{background:var(--soft);border-radius:12px;padding:12px 14px}
+.metric .k{font-size:12px;color:var(--muted)}
+.metric .v{font-size:20px;font-weight:700;margin-top:2px}
+.verdict{font-size:14px;margin-top:16px;padding:12px 14px;border-radius:10px;background:var(--soft)}
+.verdict.good{background:#eaf7ee;color:#14532d}
+.verdict.bad{background:#fdeceb;color:#7f1d1d}
+.verdict.mid{background:#fff6e8;color:#7c4a03}
+.note{font-size:12.5px;color:var(--muted);margin-top:12px}
+.defs{font-size:13.5px;color:#444}
+.defs li{margin-left:18px;margin-bottom:5px}
+.table-tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:16px;padding-top:14px;border-top:1px dashed var(--line)}
+.table-tools input[type=text]{flex:1;min-width:170px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;font-size:13.5px}
+.btn-sm{padding:7px 14px;border:1px solid var(--ink);background:var(--ink);color:#fff;border-radius:999px;font-size:13px;cursor:pointer}
+.btn-sm.ghost{background:#fff;color:var(--ink)}
+.btn-sm:hover{opacity:.85}
+.row-count{font-size:12.5px;color:var(--muted)}
+.table-wrap{overflow-x:auto;margin-top:12px}
+table.cmp{width:100%;border-collapse:collapse;font-size:13.5px}
+table.cmp th,table.cmp td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:right}
+table.cmp th:first-child,table.cmp td:first-child{text-align:left;color:#333}
+table.cmp th{color:var(--muted);font-weight:600;background:var(--soft)}
+table.cmp tr.key td{background:#f5f9ff;font-weight:700}
+table.rec{width:100%;border-collapse:collapse;font-size:12.5px;min-width:1280px}
+table.rec th,table.rec td{border-bottom:1px solid var(--line);padding:7px 9px;text-align:left;white-space:nowrap}
+table.rec th{color:var(--muted);font-weight:600;background:var(--soft)}
+.tag-ok{color:var(--ok);font-weight:600}
+.tag-bad{color:var(--bad);font-weight:600}
+.warn{font-size:12.5px;color:var(--warn);margin-top:8px}
+.link-btn{background:none;border:none;color:var(--accent);cursor:pointer;font-size:13px;padding:0}
+footer{text-align:center;color:var(--muted);font-size:13px;padding:30px 0 50px}
+footer a{color:var(--muted)}
+@media(max-width:860px){.grid,.three{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><div class="container topline">
+  <a class="back" href="../index.html">← 返回主页</a>
+  <span style="font-size:13px;color:var(--muted)">端内 · 订阅商业化 · 双组 AB</span>
+</div></header>
+
+<main class="container">
+<h1>端内订阅商业化 AB Test Lab</h1>
+<p class="sub">面向 to C 订阅制 App 产品经理的端内实验分析器。对照组与实验组分别录入数据，两组展示基数不同，因此全部用比率与人均/会话口径对比；主判定指标为<b>会话价值 = 该组净销售额 ÷ 该组订阅页展示次数</b>。</p>
+
+<section class="card">
+  <h2>数据录入 · 双组对比 · 保存记录</h2>
+  <p class="hint">支持近一周 / 近一月 / 近三个月 / 近一年 / 自定义周期。填完数据后点"保存数据"，本轮两组结果会保存为表格中的一条记录。</p>
+
+  <div class="three">
+    <div class="param"><label>销售额数据来源</label><div style="display:flex;gap:14px;font-size:13.5px;padding-top:4px">
+      <label style="display:flex;align-items:center;gap:5px"><input type="radio" name="srcmode" id="modeEstimate" checked> SKU 客单价估算</label>
+      <label style="display:flex;align-items:center;gap:5px"><input type="radio" name="srcmode" id="modeActual"> 真实分组净销售额</label>
+    </div></div>
+    <div class="param"><label>数据周期</label><div style="display:flex;gap:8px">
+      <select id="period" style="flex:1">
+        <option value="近一周">近一周</option>
+        <option value="近一月" selected>近一月</option>
+        <option value="近三个月">近三个月</option>
+        <option value="近一年">近一年</option>
+        <option value="自定义">自定义…</option>
+      </select>
+      <input type="text" id="periodCustom" placeholder="如 7/1–7/8" style="display:none">
+    </div></div>
+    <div class="param"><label>&nbsp;</label><button class="btn-sm ghost" id="fillExample" style="width:100%">填入示例数据</button></div>
+    <div class="param"><label>续费收入占比（%）</label><input type="number" id="renewShare" placeholder="如 50"></div>
+    <div class="param"><label>周单价格（$）</label><input type="number" id="weeklyPrice" placeholder="如 10"></div>
+    <div class="param"><label>年单价格（$）</label><input type="number" id="annualPrice" placeholder="如 24"></div>
+  </div>
+
+  <div id="estimateBlock">
+    <h3>Step 1–2：SKU 客单价与两组销售额估算</h3>
+    <p class="hint">SKU 客单价 = 该 SKU 全量（A+B）总销售额 ÷ 总订单数；组销售额 = Σ（SKU 客单价 × 该组该 SKU 订单数）。适用于"埋点能分订单、金额表没有组别"的情况。</p>
+    <div class="table-wrap"><table class="inp">
+      <thead><tr><th>SKU 名称</th><th>类型</th><th>A+B 总销售额（$）</th><th>A+B 总订单数</th><th>客单价（$）</th><th>对照组订单数</th><th>实验组订单数</th><th>对照组销售额（$）</th><th>实验组销售额（$）</th></tr></thead>
+      <tbody>
+        <tr><td><input id="sku0Name" value="SKU-1"></td><td><select id="sku0Type"><option value="周">周单</option><option value="年">年单</option></select></td><td><input id="sku0Amt" type="number" placeholder="0"></td><td><input id="sku0Ord" type="number" placeholder="0"></td><td class="calc" id="sku0Unit">–</td><td><input id="sku0C" type="number" placeholder="0"></td><td><input id="sku0T" type="number" placeholder="0"></td><td class="calc" id="sku0CS">–</td><td class="calc" id="sku0TS">–</td></tr>
+        <tr><td><input id="sku1Name" value="SKU-2"></td><td><select id="sku1Type"><option value="周">周单</option><option value="年">年单</option></select></td><td><input id="sku1Amt" type="number" placeholder="0"></td><td><input id="sku1Ord" type="number" placeholder="0"></td><td class="calc" id="sku1Unit">–</td><td><input id="sku1C" type="number" placeholder="0"></td><td><input id="sku1T" type="number" placeholder="0"></td><td class="calc" id="sku1CS">–</td><td class="calc" id="sku1TS">–</td></tr>
+        <tr><td><input id="sku2Name" value="SKU-3"></td><td><select id="sku2Type"><option value="周">周单</option><option value="年" selected>年单</option></select></td><td><input id="sku2Amt" type="number" placeholder="0"></td><td><input id="sku2Ord" type="number" placeholder="0"></td><td class="calc" id="sku2Unit">–</td><td><input id="sku2C" type="number" placeholder="0"></td><td><input id="sku2T" type="number" placeholder="0"></td><td class="calc" id="sku2CS">–</td><td class="calc" id="sku2TS">–</td></tr>
+        <tr><td><input id="sku3Name" value="SKU-4"></td><td><select id="sku3Type"><option value="周">周单</option><option value="年" selected>年单</option></select></td><td><input id="sku3Amt" type="number" placeholder="0"></td><td><input id="sku3Ord" type="number" placeholder="0"></td><td class="calc" id="sku3Unit">–</td><td><input id="sku3C" type="number" placeholder="0"></td><td><input id="sku3T" type="number" placeholder="0"></td><td class="calc" id="sku3CS">–</td><td class="calc" id="sku3TS">–</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div id="actualBlock" style="display:none">
+    <h3>真实分组数据</h3>
+    <div class="grid">
+      <div class="param"><label>对照组净销售额（$）</label><input type="number" id="cNet" placeholder="0"></div>
+      <div class="param"><label>实验组净销售额（$）</label><input type="number" id="tNet" placeholder="0"></div>
+      <div class="param"><label>对照组周单数</label><input type="number" id="cWeekly" placeholder="0"></div>
+      <div class="param"><label>实验组周单数</label><input type="number" id="tWeekly" placeholder="0"></div>
+      <div class="param"><label>对照组年单数</label><input type="number" id="cAnnual" placeholder="0"></div>
+      <div class="param"><label>实验组年单数</label><input type="number" id="tAnnual" placeholder="0"></div>
+    </div>
+  </div>
+
+  <h3>Step 3：端内订阅漏斗（分步转化与流失）</h3>
+  <p class="hint">每一步分别看两组的转化率与流失率；支付成功数在估算模式下由 SKU 订单自动汇总，在真实模式下由周单+年单汇总。</p>
+  <div class="table-wrap"><table class="inp">
+    <thead><tr><th>漏斗步骤</th><th>对照组</th><th>实验组</th><th>对照组转化率</th><th>实验组转化率</th><th>差异（pp）</th></tr></thead>
+    <tbody>
+      <tr><td>触达 / 曝光（可选）</td><td><input type="number" id="cReach" placeholder="0"></td><td><input type="number" id="tReach" placeholder="0"></td><td class="calc" id="cR1">–</td><td class="calc" id="tR1">–</td><td class="calc" id="dR1">–</td></tr>
+      <tr><td>订阅页展示次数</td><td><input type="number" id="cImpr" placeholder="0"></td><td><input type="number" id="tImpr" placeholder="0"></td><td class="calc" id="cR2">–</td><td class="calc" id="tR2">–</td><td class="calc" id="dR2">–</td></tr>
+      <tr><td>点击订阅</td><td><input type="number" id="cClick" placeholder="0"></td><td><input type="number" id="tClick" placeholder="0"></td><td class="calc" id="cR3">–</td><td class="calc" id="tR3">–</td><td class="calc" id="dR3">–</td></tr>
+      <tr><td>发起支付</td><td><input type="number" id="cInit" placeholder="0"></td><td><input type="number" id="tInit" placeholder="0"></td><td class="calc" id="cR4">–</td><td class="calc" id="tR4">–</td><td class="calc" id="dR4">–</td></tr>
+      <tr><td>支付成功（埋点事件）</td><td><input type="number" id="cPaySucc" placeholder="0"></td><td><input type="number" id="tPaySucc" placeholder="0"></td><td class="calc" id="cR5">–</td><td class="calc" id="tR5">–</td><td class="calc" id="dR5">–</td></tr>
+      <tr><td>SKU 订单合计（ODS，用于销售额估算）</td><td class="calc" id="cPayCell">–</td><td class="calc" id="tPayCell">–</td><td class="calc" id="cDiffCell">–</td><td class="calc" id="tDiffCell">–</td><td class="calc">口径对账</td></tr>
+    </tbody>
+  </table></div>
+  <div class="verdict" id="funnelVerdict">填写漏斗数据后显示两组各自的最薄弱环节与优化方向</div>
+  <div class="warn" id="dataWarn"></div>
+
+  <div class="outputs">
+    <div class="metric"><div class="k">对照组会话价值</div><div class="v" id="svC">–</div></div>
+    <div class="metric"><div class="k">实验组会话价值</div><div class="v" id="svT">–</div></div>
+    <div class="metric"><div class="k">会话价值差异</div><div class="v" id="svDiff">–</div></div>
+    <div class="metric"><div class="k">完成率差异</div><div class="v" id="cpDiff">–</div></div>
+    <div class="metric"><div class="k">周单占比变化</div><div class="v" id="wkDiff">–</div></div>
+    <div class="metric"><div class="k">周/年价格比</div><div class="v" id="priceRatio">–</div></div>
+    <div class="metric"><div class="k">对照组最薄弱环节</div><div class="v" id="weakC" style="font-size:15px">–</div></div>
+    <div class="metric"><div class="k">实验组最薄弱环节</div><div class="v" id="weakT" style="font-size:15px">–</div></div>
+  </div>
+  <div class="verdict" id="v1">填写数据后查看全量判定</div>
+  <p class="note">判定：会话价值为主（实验组 ≥ 对照组 × (1−容忍度)）；完成率提升、周单占比上升、周单续费回滚能力为辅助依据。若会话价值基本持平、完成率提升、周单占比上升且回滚能力不弱，则建议全量。</p>
+
+  <div class="table-tools">
+    <input type="text" id="recNote" placeholder="备注（可选）">
+    <label style="font-size:13px;color:var(--muted)">会话价值容忍度（%）<input type="number" id="tol" value="1" style="width:70px;margin-left:6px"></label>
+    <button class="btn-sm" id="saveRec">保存数据</button>
+    <button class="btn-sm ghost" id="exportCsv">导出 CSV</button>
+    <button class="btn-sm ghost" id="clearRecs">清空</button>
+    <span class="row-count" id="recCount">共 0 条</span>
+  </div>
+  <div class="table-wrap">
+    <table class="rec">
+      <thead><tr>
+        <th>周期</th><th>对照组展示</th><th>实验组展示</th><th>展示差异</th><th>对照组净销售额</th><th>实验组净销售额</th><th>销售额差异</th>
+        <th>对照组会话价值</th><th>实验组会话价值</th><th>会话价值差异</th><th>对照组完成率</th><th>实验组完成率</th><th>完成率差异</th>
+        <th>对照组周单占比</th><th>实验组周单占比</th>
+        <th>对照组展示→点击</th><th>实验组展示→点击</th><th>对照组点击→支付</th><th>实验组点击→支付</th><th>对照组支付成功(埋点)</th><th>实验组支付成功(埋点)</th><th>对照组SKU订单</th><th>实验组SKU订单</th>
+        <th>结论</th><th>备注</th><th></th>
+      </tr></thead>
+      <tbody id="recBody"></tbody>
+    </table>
+  </div>
+</section>
+
+<section class="card">
+  <h2>双组对比明细</h2>
+  <div class="table-wrap">
+    <table class="cmp" id="cmpTable">
+      <thead><tr><th>指标</th><th>对照组</th><th>实验组</th><th>绝对差</th><th>相对差</th></tr></thead>
+      <tbody id="cmpBody"></tbody>
+    </table>
+  </div>
+</section>
+
+<section class="card">
+  <h2>怎么理解会话价值与全量判定</h2>
+  <div class="defs">
+    <ul>
+      <li><b>会话价值衡量的是"每次订阅页展示能带来多少钱"</b>：它把展示量不同的两组放到同一基准上，所以比总销售额更能反映变现效率。</li>
+      <li><b>会话价值 = 转化 × 客单价。</b>所以可能出现"完成率提升、会话价值却基本持平"的情况——默认到更便宜的套餐后，更多用户完成订阅，但客单价被拉低，两者相互抵消。</li>
+      <li><b>这时要看结构变化和续费能力</b>：周单占比上升意味着更多用户进入更高频的续费路径；当周单价格接近年单一半、且续费收入占比较高时，长期回滚能力更强，短期会话价值持平也可以接受。</li>
+      <li><b>绝对量与比率都要看</b>：展示次数和销售额的绝对差能说明两组盘子大小，比率（会话价值、完成率、周单占比）才是可比口径。</li>
+      <li><b>估算口径的边界</b>：用全量 SKU 客单价替代组内客单价，若两组国家结构差异大（低价区占比不同），组销售额会被高估或低估；接入实验平台能区分金额后，改用真实分组净销售额。</li>
+    </ul>
+  </div>
+</section>
+
+<section class="card">
+  <h2>显著性校验</h2>
+  <h3>A. 订阅完成率（两比例检验）</h3>
+  <div class="outputs">
+    <div class="metric"><div class="k">完成率相对提升</div><div class="v" id="pRel">–</div></div>
+    <div class="metric"><div class="k">p 值（双侧）</div><div class="v" id="pP">–</div></div>
+    <div class="metric"><div class="k">95% 置信区间（百分点）</div><div class="v" id="pCi" style="font-size:16px">–</div></div>
+  </div>
+  <div class="verdict" id="v2">填写数据后自动计算</div>
+  <h3>B. 会话价值（可选，需要两组标准差）</h3>
+  <p class="hint">均值自动取上面的会话价值；如数据侧能提供标准差，可校验会话价值差异是否显著，否则跳过。</p>
+  <div class="grid">
+    <div class="param"><label>对照组会话价值标准差</label><input type="number" id="scStd" placeholder="0"></div>
+    <div class="param"><label>实验组会话价值标准差</label><input type="number" id="stStd" placeholder="0"></div>
+  </div>
+  <div class="outputs">
+    <div class="metric"><div class="k">会话价值 p 值</div><div class="v" id="sP">–</div></div>
+    <div class="metric"><div class="k">95% 置信区间（$/次）</div><div class="v" id="sCi" style="font-size:16px">–</div></div>
+  </div>
+  <div class="verdict" id="v3">填写标准差后计算；标准差为空或 0 表示跳过</div>
+</section>
+
+<section class="card" style="border-style:dashed">
+  <h2>拓展（投放侧参考）</h2>
+  <p class="hint">投放/财务口径，产品侧通常拿不到分渠道付费归因；仅在投放团队提供一致口径数据时参考，<b>不要与端内会话价值相乘</b>。</p>
+  <div class="grid">
+    <div class="param"><label>渠道首月 ROAS（D30，%）</label><input type="number" id="roasIn" placeholder="0"></div>
+    <div class="param"><label>公司回本目标（个月）</label><input type="number" id="target" placeholder="0"></div>
+  </div>
+  <div class="outputs">
+    <div class="metric"><div class="k">推算回本周期</div><div class="v" id="payback">–</div></div>
+    <div class="metric"><div class="k">达标所需最低 ROAS</div><div class="v" id="needRoas">–</div></div>
+  </div>
+  <div class="verdict" id="v4">填写该渠道 ROAS 查看参考结论</div>
+</section>
+
+<section class="card">
+  <h2>口径速查</h2>
+  <div class="defs">
+    <ul>
+      <li><b>会话价值</b> = 该组净销售额 ÷ 该组订阅页展示次数（本 Lab 主判定指标）</li>
+      <li><b>订阅完成率</b> = 该组支付成功（埋点事件）÷ 该组订阅页展示次数</li>
+      <li><b>支付成功（埋点）</b> 与 <b>SKU 订单合计（ODS）</b> 是两个口径：转化率/完成率用埋点事件，销售额与会话价值用 ODS 或真实分组金额；两者差异超过 2% 会被标记，需先对齐口径</li>
+      <li><b>SKU 客单价</b> = SKU 全量（A+B）总销售额 ÷ 总订单数；组销售额 = Σ(客单价 × 组订单数)</li>
+      <li><b>周单占比</b> = 周单订单数 ÷ 该组总订单数（年单同理）</li>
+      <li><b>周/年价格比</b> = 周单价格 ÷ 年单价格，用于判断默认套餐变化对续费回滚能力的影响</li>
+      <li><b>续费收入占比</b>：续费收入 ÷ 总收入；占比越高，套餐结构变化对长期收入越重要</li>
+      <li><b>p 值</b>：&lt;0.05 只能说统计显著；是否全量还要看会话价值与结构变化</li>
+      <li><b>ROAS</b>：投放口径的收入 ÷ 花费，需注明 D7/D30、是否含自然量与回传延迟</li>
+    </ul>
+  </div>
+</section>
+</main>
+
+<footer><div class="container">王曼鹂 · <a href="../index.html">个人主页</a> · 用 Codex 快速搭建验证的端内订阅商业化 AB Test Lab</div></footer>
+
+<script>
+function el(id){ return document.getElementById(id); }
+function val(id){ var e = el(id); return e ? (parseFloat(e.value) || 0) : 0; }
+function num(v,d){ return isFinite(v) ? v.toLocaleString('zh-CN',{minimumFractionDigits:d||0,maximumFractionDigits:d||0}) : '—'; }
+function money(v,d){ return isFinite(v) ? '$' + num(v, d===undefined?2:d) : '—'; }
+function pct(v,d){ return isFinite(v) ? num(v*100, d===undefined?2:d) + '%' : '—'; }
+function pp(v){ return (v>=0?'+':'') + num(v*100,2) + 'pp'; }
+function rel(a,b){ if(!isFinite(a)||!isFinite(b)||b===0) return '—'; var r=(a-b)/b*100; return (r>=0?'+':'')+num(r,2)+'%'; }
+function absDiff(a,b){ return isFinite(a)&&isFinite(b) ? num(a-b,0) : '—'; }
+function setVerdict(e,cls,text){ e.className='verdict '+cls; e.textContent=text; }
+
+var SKU_COUNT = 4;
+var records = [];
+try { records = JSON.parse(localStorage.getItem('lab_ab_records_v5') || '[]') || []; } catch(e){ records = []; }
+var last = null;
+
+function rollbackLabel(priceRatio, renewShare){
+  if (renewShare <= 0 || priceRatio <= 0) return {label:'未评估', cls:'mid'};
+  if (renewShare >= 45 && priceRatio >= 0.3 && priceRatio <= 0.7) return {label:'强', cls:'good'};
+  if (renewShare >= 25 && priceRatio >= 0.2 && priceRatio <= 0.9) return {label:'中', cls:'mid'};
+  return {label:'弱', cls:'bad'};
+}
+
+function readGroups(){
+  var estimate = el('modeEstimate').checked;
+  var cSales = 0, tSales = 0, cOrders = 0, tOrders = 0, cWeekly = 0, tWeekly = 0, cAnnual = 0, tAnnual = 0;
+  for (var i=0;i<SKU_COUNT;i++){
+    var amt = val('sku'+i+'Amt'), ord = val('sku'+i+'Ord');
+    var unit = ord > 0 ? amt/ord : 0;
+    var co = val('sku'+i+'C'), to = val('sku'+i+'T');
+    el('sku'+i+'Unit').textContent = ord>0 ? money(unit,2) : '—';
+    el('sku'+i+'CS').textContent = ord>0 ? money(unit*co,0) : '—';
+    el('sku'+i+'TS').textContent = ord>0 ? money(unit*to,0) : '—';
+    if (estimate){
+      cSales += unit*co; tSales += unit*to;
+      cOrders += co; tOrders += to;
+      var type = el('sku'+i+'Type').value;
+      if (type === '周') { cWeekly += co; tWeekly += to; } else { cAnnual += co; tAnnual += to; }
+    }
+  }
+  if (!estimate){
+    cSales = val('cNet'); tSales = val('tNet');
+    cWeekly = val('cWeekly'); tWeekly = val('tWeekly');
+    cAnnual = val('cAnnual'); tAnnual = val('tAnnual');
+    cOrders = cWeekly + cAnnual; tOrders = tWeekly + tAnnual;
+  }
+  var c = { sales:cSales, orders:cOrders, weekly:cWeekly, annual:cAnnual, impr:val('cImpr'), reach:val('cReach'), click:val('cClick'), init:val('cInit'), payEvent:val('cPaySucc') };
+  var t = { sales:tSales, orders:tOrders, weekly:tWeekly, annual:tAnnual, impr:val('tImpr'), reach:val('tReach'), click:val('tClick'), init:val('tInit'), payEvent:val('tPaySucc') };
+  [c,t].forEach(function(g){
+    g.completion = g.impr>0 ? g.payEvent/g.impr : 0;
+    g.sessionValue = g.impr>0 ? g.sales/g.impr : 0;
+    g.arppu = g.payEvent>0 ? g.sales/g.payEvent : 0;
+    g.weeklyShare = g.orders>0 ? g.weekly/g.orders : 0;
+    g.annualShare = g.orders>0 ? g.annual/g.orders : 0;
+    g.rShow = g.reach>0 ? g.impr/g.reach : NaN;
+    g.rClick = g.impr>0 ? g.click/g.impr : NaN;
+    g.rInit = g.click>0 ? g.init/g.click : NaN;
+    g.rPay = g.init>0 ? g.payEvent/g.init : NaN;
+    g.lossClick = isFinite(g.rClick) ? 1-g.rClick : NaN;
+    g.lossInit = isFinite(g.rInit) ? 1-g.rInit : NaN;
+    g.lossPay = isFinite(g.rPay) ? 1-g.rPay : NaN;
+  });
+  var wp = val('weeklyPrice'), ap = val('annualPrice');
+  return { c:c, t:t, priceRatio: ap>0 ? wp/ap : 0, renewShare: val('renewShare') };
+}
+
+function renderCompare(c,t,priceRatio){
+  var rows = [
+    ['订阅页展示次数', num(c.impr), num(t.impr), absDiff(t.impr,c.impr), rel(t.impr,c.impr), false],
+    ['支付成功（埋点事件）', num(c.payEvent), num(t.payEvent), absDiff(t.payEvent,c.payEvent), rel(t.payEvent,c.payEvent), false],
+    ['SKU 订单合计（ODS）', num(c.orders), num(t.orders), absDiff(t.orders,c.orders), rel(t.orders,c.orders), false],
+    ['订阅完成率', pct(c.completion,2), pct(t.completion,2), pp(t.completion-c.completion), rel(t.completion,c.completion), false],
+    ['净销售额', money(c.sales,0), money(t.sales,0), absDiff(t.sales,c.sales), rel(t.sales,c.sales), false],
+    ['会话价值', money(c.sessionValue,4), money(t.sessionValue,4), num(t.sessionValue-c.sessionValue,4), rel(t.sessionValue,c.sessionValue), true],
+    ['ARPPU', money(c.arppu,2), money(t.arppu,2), num(t.arppu-c.arppu,2), rel(t.arppu,c.arppu), false],
+    ['周单数', num(c.weekly), num(t.weekly), absDiff(t.weekly,c.weekly), rel(t.weekly,c.weekly), false],
+    ['年单数', num(c.annual), num(t.annual), absDiff(t.annual,c.annual), rel(t.annual,c.annual), false],
+    ['周单占比', pct(c.weeklyShare,1), pct(t.weeklyShare,1), pp(t.weeklyShare-c.weeklyShare), rel(t.weeklyShare,c.weeklyShare), false],
+    ['年单占比', pct(c.annualShare,1), pct(t.annualShare,1), pp(t.annualShare-c.annualShare), rel(t.annualShare,c.annualShare), false],
+    ['周/年价格比', priceRatio>0?num(priceRatio,2):'—', priceRatio>0?num(priceRatio,2):'—', '—', '—', false]
+  ];
+  el('cmpBody').innerHTML = rows.map(function(r){
+    return '<tr class="'+(r[5]?'key':'')+'"><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td>'+r[3]+'</td><td>'+r[4]+'</td></tr>';
+  }).join('');
+}
+
+function rateText(v){ return isFinite(v) ? pct(v,1) : '—'; }
+function stepDiff(a,b){ return (isFinite(a)&&isFinite(b)) ? pp(a-b) : '—'; }
+function weakest(c){
+  var steps = [['订阅页→点击订阅', c.rClick, '检查订阅入口、权益表达与默认项是否清晰'], ['点击→发起支付', c.rInit, '检查价格与套餐结构、信任感与支付方式'], ['发起支付→支付成功', c.rPay, '检查支付渠道、失败重试与本地化支付']];
+  var valid = steps.filter(function(s){ return isFinite(s[1]); });
+  if (!valid.length) return null;
+  valid.sort(function(a,b){ return a[1]-b[1]; });
+  return valid[0];
+}
+function renderFunnel(c,t){
+  el('cR1').textContent = rateText(c.rShow); el('tR1').textContent = rateText(t.rShow); el('dR1').textContent = stepDiff(t.rShow,c.rShow);
+  el('cR2').textContent = (c.reach>0) ? rateText(c.rShow) : '100%（基准）'; el('tR2').textContent = (t.reach>0) ? rateText(t.rShow) : '100%（基准）'; el('dR2').textContent = stepDiff(t.rShow,c.rShow);
+  el('cR3').textContent = rateText(c.rClick); el('tR3').textContent = rateText(t.rClick); el('dR3').textContent = stepDiff(t.rClick,c.rClick);
+  el('cR4').textContent = rateText(c.rInit); el('tR4').textContent = rateText(t.rInit); el('dR4').textContent = stepDiff(t.rInit,c.rInit);
+  el('cR5').textContent = rateText(c.rPay); el('tR5').textContent = rateText(t.rPay); el('dR5').textContent = stepDiff(t.rPay,c.rPay);
+  el('cPayCell').textContent = num(c.orders); el('tPayCell').textContent = num(t.orders);
+  el('cDiffCell').textContent = (c.orders>0 && c.payEvent>0) ? rel(c.payEvent, c.orders) : '—';
+  el('tDiffCell').textContent = (t.orders>0 && t.payEvent>0) ? rel(t.payEvent, t.orders) : '—';
+  var wc = weakest(c), wt = weakest(t);
+  el('weakC').textContent = wc ? (wc[0] + ' ' + pct(wc[1],1)) : '—';
+  el('weakT').textContent = wt ? (wt[0] + ' ' + pct(wt[1],1)) : '—';
+  if (wc && wt) setVerdict(el('funnelVerdict'),'mid','对照组最薄弱：'+wc[0]+'（'+pct(wc[1],1)+'），'+wc[2]+'；实验组最薄弱：'+wt[0]+'（'+pct(wt[1],1)+'），'+wt[2]+'。');
+  else setVerdict(el('funnelVerdict'),'mid','填写点击、发起支付等数据后显示两组最薄弱环节与优化方向。');
+}
+
+function renderVerdict(c,t,priceRatio,renewShare){
+  var tol = val('tol')/100;
+  var ready = c.impr>0 && t.impr>0 && (c.sales>0 || t.sales>0);
+  if (!ready){
+    setVerdict(el('v1'),'mid','请先填写两组展示次数与销售额数据（或 SKU 明细），再查看全量判定。');
+    last = null; return;
+  }
+  var svOk = t.sessionValue >= c.sessionValue*(1-tol);
+  var cpOk = t.completion >= c.completion;
+  var wkOk = t.weeklyShare >= c.weeklyShare;
+  var rb = rollbackLabel(priceRatio, renewShare);
+  el('svC').textContent = money(c.sessionValue,4);
+  el('svT').textContent = money(t.sessionValue,4);
+  el('svDiff').textContent = rel(t.sessionValue,c.sessionValue);
+  el('cpDiff').textContent = pp(t.completion-c.completion);
+  el('wkDiff').textContent = pp(t.weeklyShare-c.weeklyShare);
+  el('priceRatio').textContent = priceRatio>0 ? num(priceRatio,2) : '—';
+  var parts = [
+    (svOk?'会话价值达标':'会话价值低于容忍线')+'（'+rel(t.sessionValue,c.sessionValue)+'）',
+    (cpOk?'完成率提升':'完成率未提升')+'（'+pp(t.completion-c.completion)+'）',
+    (wkOk?'周单占比上升':'周单占比未上升')+'（'+pp(t.weeklyShare-c.weeklyShare)+'）',
+    '续费回滚能力：'+rb.label
+  ];
+  if (svOk && cpOk && wkOk && rb.label !== '弱' && rb.label !== '未评估'){
+    setVerdict(el('v1'),'good','建议全量：'+parts.join('；')+'。全量后重点跟踪退款/取消与续费表现。');
+  } else if (svOk){
+    setVerdict(el('v1'),'mid','暂缓全量/小流量放量：'+parts.join('；')+'。信号不完全一致，建议延长观察或先按比例放量。');
+  } else {
+    setVerdict(el('v1'),'bad','不建议全量：'+parts.join('；')+'。先定位是客单价、完成率还是展示量变化导致。');
+  }
+  last = { c:c, t:t, priceRatio:priceRatio, renewShare:renewShare, svOk:svOk, cpOk:cpOk, wkOk:wkOk, rb:rb,
+    verdict: (svOk&&cpOk&&wkOk&&rb.label!=='弱'&&rb.label!=='未评估') ? '建议全量' : (svOk ? '继续观察' : '不建议全量') };
+}
+
+function currentPeriod(){ var v = el('period').value; return v==='自定义' ? (el('periodCustom').value.trim() || '自定义周期') : v; }
+
+function renderRecords(){
+  var body = el('recBody');
+  if (!records.length){ body.innerHTML = '<tr><td colspan="28" style="color:#999">还没有记录。填好数据并选好周期后点“保存数据”。</td></tr>'; }
+  else {
+    body.innerHTML = records.map(function(r,i){
+      var ok = r.verdict === '建议全量';
+      return '<tr>' +
+        '<td>'+r.period+'</td><td>'+num(r.cImpr)+'</td><td>'+num(r.tImpr)+'</td><td>'+r.imprDiff+'</td>' +
+        '<td>'+money(r.cSales,0)+'</td><td>'+money(r.tSales,0)+'</td><td>'+r.salesDiff+'</td>' +
+        '<td>'+money(r.cSv,4)+'</td><td>'+money(r.tSv,4)+'</td><td>'+r.svDiff+'</td>' +
+        '<td>'+pct(r.cCompletion,2)+'</td><td>'+pct(r.tCompletion,2)+'</td><td>'+r.cpDiff+'</td>' +
+        '<td>'+pct(r.cWeeklyShare,1)+'</td><td>'+pct(r.tWeeklyShare,1)+'</td>' +
+        '<td>'+r.cShowClick+'</td><td>'+r.tShowClick+'</td><td>'+r.cClickInit+'</td><td>'+r.tClickInit+'</td><td>'+r.cInitPay+'</td><td>'+r.tInitPay+'</td><td>'+num(r.cPayEvent)+'</td><td>'+num(r.tPayEvent)+'</td><td>'+num(r.cOrders)+'</td><td>'+num(r.tOrders)+'</td>' +
+        '<td class="'+(ok?'tag-ok':'tag-bad')+'">'+r.verdict+'</td><td>'+(r.note||'—')+'</td>' +
+        '<td><button class="link-btn" data-del="'+i+'">删除</button></td></tr>';
+    }).join('');
+    Array.prototype.forEach.call(body.querySelectorAll('button[data-del]'), function(b){
+      b.addEventListener('click', function(){ records.splice(parseInt(b.getAttribute('data-del'),10),1); saveRecords(); renderRecords(); });
+    });
+  }
+  el('recCount').textContent = '共 ' + records.length + ' 条';
+}
+function saveRecords(){ try { localStorage.setItem('lab_ab_records_v5', JSON.stringify(records)); } catch(e){} }
+function saveCurrent(){
+  if (!last) { alert('请先填写两组数据，生成有效判定后再保存'); return; }
+  records.push({
+    period: currentPeriod(), note: el('recNote').value.trim(), verdict: last.verdict,
+    cImpr: last.c.impr, tImpr: last.t.impr, imprDiff: absDiff(last.t.impr,last.c.impr),
+    cSales: last.c.sales, tSales: last.t.sales, salesDiff: absDiff(last.t.sales,last.c.sales),
+    cSv: last.c.sessionValue, tSv: last.t.sessionValue, svDiff: rel(last.t.sessionValue,last.c.sessionValue),
+    cCompletion: last.c.completion, tCompletion: last.t.completion, cpDiff: pp(last.t.completion-last.c.completion),
+    cWeeklyShare: last.c.weeklyShare, tWeeklyShare: last.t.weeklyShare,
+    cShowClick: rateText(last.c.rClick), tShowClick: rateText(last.t.rClick),
+    cClickInit: rateText(last.c.rInit), tClickInit: rateText(last.t.rInit),
+    cInitPay: rateText(last.c.rPay), tInitPay: rateText(last.t.rPay),
+    cPayEvent: last.c.payEvent, tPayEvent: last.t.payEvent, cOrders: last.c.orders, tOrders: last.t.orders
+  });
+  saveRecords(); renderRecords();
+}
+function exportCsv(){
+  if (!records.length){ alert('还没有可导出的记录'); return; }
+  var head = ['周期','对照组展示','实验组展示','展示绝对差','对照组净销售额','实验组净销售额','销售额绝对差','对照组会话价值','实验组会话价值','会话价值差异','对照组完成率','实验组完成率','完成率差异','对照组周单占比','实验组周单占比','对照组展示→点击','实验组展示→点击','对照组点击→支付','实验组点击→支付','对照组支付成功率','实验组支付成功率','对照组支付成功(埋点)','实验组支付成功(埋点)','对照组SKU订单','实验组SKU订单','结论','备注'];
+  var lines = [head].concat(records.map(function(r){
+    return [r.period,num(r.cImpr),num(r.tImpr),r.imprDiff,num(r.cSales,2),num(r.tSales,2),r.salesDiff,num(r.cSv,4),num(r.tSv,4),r.svDiff,pct(r.cCompletion,2),pct(r.tCompletion,2),r.cpDiff,pct(r.cWeeklyShare,1),pct(r.tWeeklyShare,1),r.cShowClick,r.tShowClick,r.cClickInit,r.tClickInit,r.cInitPay,r.tInitPay,r.cPayEvent,r.tPayEvent,r.cOrders,r.tOrders,r.verdict,r.note||''];
+  }));
+  var csv = '\ufeff' + lines.map(function(row){ return row.map(function(c){ return '"'+String(c).replace(/"/g,'""')+'"'; }).join(','); }).join('\r\n');
+  var blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='端内AB双组记录.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href);
+}
+function clearRecords(){ if (records.length && confirm('确定清空所有记录？')){ records=[]; saveRecords(); renderRecords(); } }
+el('saveRec').addEventListener('click', saveCurrent);
+el('exportCsv').addEventListener('click', exportCsv);
+el('clearRecs').addEventListener('click', clearRecords);
+el('period').addEventListener('change', function(){ el('periodCustom').style.display = this.value==='自定义' ? 'inline-block' : 'none'; });
+el('modeEstimate').addEventListener('change', toggleMode);
+el('modeActual').addEventListener('change', toggleMode);
+function toggleMode(){
+  var est = el('modeEstimate').checked;
+  el('estimateBlock').style.display = est ? 'block' : 'none';
+  el('actualBlock').style.display = est ? 'none' : 'block';
+  calcAll();
+}
+
+el('fillExample').addEventListener('click', function(){
+  var sku = [
+    ['SKU-1','周',2000,200,60,90],
+    ['SKU-2','周',1500,300,120,150],
+    ['SKU-3','年',4800,200,40,20],
+    ['SKU-4','年',2400,300,60,40]
+  ];
+  sku.forEach(function(s,i){
+    el('sku'+i+'Name').value = s[0]; el('sku'+i+'Type').value = s[1];
+    el('sku'+i+'Amt').value = s[2]; el('sku'+i+'Ord').value = s[3];
+    el('sku'+i+'C').value = s[4]; el('sku'+i+'T').value = s[5];
+  });
+  el('cImpr').value = 20000; el('tImpr').value = 18000;
+  el('cReach').value = 40000; el('tReach').value = 36000;
+  el('cClick').value = 6000; el('tClick').value = 6300;
+  el('cInit').value = 1500; el('tInit').value = 1650;
+  el('cPaySucc').value = 280; el('tPaySucc').value = 300;
+  el('renewShare').value = 50; el('weeklyPrice').value = 10; el('annualPrice').value = 24;
+  el('cNet').value = 2640; el('tNet').value = 2450;
+  el('cWeekly').value = 180; el('tWeekly').value = 240; el('cAnnual').value = 100; el('tAnnual').value = 60;
+  calcAll();
+});
+
+function normalCdf(x){ return 0.5*(1+erf(x/Math.SQRT2)); }
+function erf(x){
+  var s=x<0?-1:1; x=Math.abs(x);
+  var a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
+  var t=1/(1+p*x); var y=1-(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x); return s*y;
+}
+
+function calcSignificance(c,t){
+  var p1=c.completion, p2=t.completion, n1=c.impr, n2=t.impr;
+  if (n1>0 && n2>0){
+    var pc=(c.orders+t.orders)/(n1+n2);
+    var se=Math.sqrt(pc*(1-pc)*(1/n1+1/n2));
+    var z=se>0?(p2-p1)/se:0, pv=2*(1-normalCdf(Math.abs(z)));
+    el('pRel').textContent = rel(p2,p1);
+    el('pP').textContent = pv<0.0001?'<0.0001':num(pv,4);
+    var half=1.96*se*100, diff=(p2-p1)*100;
+    el('pCi').textContent = '['+(diff-half>=0?'+':'')+num(diff-half,2)+'pp, '+(diff+half>=0?'+':'')+num(diff+half,2)+'pp]';
+    if (pv<0.05) setVerdict(el('v2'),'good','完成率差异统计显著（p='+(pv<0.0001?'<0.0001':num(pv,4))+'），相对提升 '+rel(p2,p1)+'。');
+    else setVerdict(el('v2'),'mid','完成率差异不显著（p='+num(pv,4)+'），下结论前建议继续积累样本。');
+  }
+  var s1=val('scStd'), s2=val('stStd');
+  if (s1>0 && s2>0 && n1>0 && n2>0){
+    var se2=Math.sqrt(s1*s1/n1 + s2*s2/n2);
+    var z2=se2>0?(t.sessionValue-c.sessionValue)/se2:0, pv2=2*(1-normalCdf(Math.abs(z2)));
+    var h2=1.96*se2;
+    el('sP').textContent = pv2<0.0001?'<0.0001':num(pv2,4);
+    el('sCi').textContent = '['+num(t.sessionValue-c.sessionValue-h2,4)+', '+num(t.sessionValue-c.sessionValue+h2,4)+']';
+    if (pv2<0.05) setVerdict(el('v3'),'good','会话价值差异统计显著（p='+(pv2<0.0001?'<0.0001':num(pv2,4))+'），可作为支持全量的核心证据。');
+    else setVerdict(el('v3'),'mid','会话价值差异不显著（p='+num(pv2,4)+'）。');
+  } else {
+    el('sP').textContent='—'; el('sCi').textContent='—';
+    setVerdict(el('v3'),'mid','未提供标准差，已跳过会话价值显著性校验。');
+  }
+}
+
+function calcPayback(){
+  var roas=val('roasIn')/100, target=val('target');
+  if (!(roas>0) || !(target>0)) { el('payback').textContent='—'; el('needRoas').textContent='—'; setVerdict(el('v4'),'mid','填写该渠道 ROAS 与回本目标后查看参考结论。'); return; }
+  var payback=1/roas, need=100/target;
+  el('payback').textContent = num(payback,1)+' 个月';
+  el('needRoas').textContent = num(need,1)+'%';
+  if (payback<=target) setVerdict(el('v4'),'good','该口径下回本约 '+num(payback,1)+' 个月，满足 '+target+' 个月目标（最低 ROAS '+num(need,1)+'%）。');
+  else setVerdict(el('v4'),'bad','该口径下回本约 '+num(payback,1)+' 个月，超过 '+target+' 个月目标；需达到 ROAS '+num(need,1)+'%。');
+}
+
+function calcAll(){
+  var g = readGroups(), c = g.c, t = g.t;
+  renderCompare(c,t,g.priceRatio); renderFunnel(c,t); renderVerdict(c,t,g.priceRatio,g.renewShare); calcSignificance(c,t); calcPayback();
+  var warns = [];
+  if (el('modeEstimate').checked){
+    for (var i=0;i<SKU_COUNT;i++){ if (val('sku'+i+'Ord')>0 && val('sku'+i+'C')+val('sku'+i+'T')>0 && val('sku'+i+'Ord') < val('sku'+i+'C')+val('sku'+i+'T')) warns.push('存在 SKU 的 A+B 总订单数小于两组订单之和，请检查数据来源口径'); }
+  }
+  [['对照组',c],['实验组',t]].forEach(function(pair){
+    var name=pair[0], g=pair[1];
+    if (g.orders>0 && g.payEvent>0){
+      var d = Math.abs(g.payEvent-g.orders)/g.orders;
+      if (d > 0.02) warns.push(name+'：埋点支付成功数('+num(g.payEvent)+') 与 SKU 订单合计('+num(g.orders)+') 相差 '+pct(d,1)+'，建议先对齐口径');
+    }
+  });
+  el('dataWarn').textContent = warns.join('；');
+}
+var inputIds = [];
+for (var i=0;i<SKU_COUNT;i++){ inputIds.push('sku'+i+'Amt','sku'+i+'Ord','sku'+i+'C','sku'+i+'T','sku'+i+'Type','sku'+i+'Name'); }
+inputIds = inputIds.concat(['cImpr','tImpr','cReach','tReach','cClick','tClick','cInit','tInit','cPaySucc','tPaySucc','cNet','tNet','cWeekly','tWeekly','cAnnual','tAnnual','tol','scStd','stStd','roasIn','target','renewShare','weeklyPrice','annualPrice']);
+inputIds.forEach(function(id){ if (el(id)){ el(id).addEventListener('input', calcAll); if (el(id).tagName==='SELECT') el(id).addEventListener('change', calcAll); } });
+renderRecords();
+calcAll();
+</script>
+</body>
+</html>

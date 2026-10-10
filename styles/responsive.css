@@ -1,0 +1,9 @@
+@media (max-width: 640px) {
+  .hero { grid-template-columns: minmax(0, 1fr) 96px; gap: 18px; }
+  .hero h1 { font-size: 25px; }
+  .hero .summary, .hero .belief { font-size: 15px; }
+  .hero-photo { width: 96px; height: 128px; }
+  .panel-title { font-size: 21px; }
+  .tab { padding: 5px 10px; font-size: 13px; }
+  .thought-title { font-size: 16px; }
+}
