@@ -1,35 +1,57 @@
-.wrap { max-width: var(--max); margin: 0 auto; padding: 0 24px; }
+.wrap { max-width: var(--max); margin: 0 auto; padding: 0 28px; }
 
+/* ---------- header ---------- */
 .site-header {
-  position: sticky; top: 0; z-index: 20;
+  position: sticky;
+  top: 0;
+  z-index: 20;
   background: var(--bg);
-  border-bottom: 1px solid var(--hairline);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s var(--ease), background-color 0.25s var(--ease);
 }
-.header-inner { display: flex; align-items: center; justify-content: space-between; gap: 18px; height: 58px; }
-.brand { font-weight: 600; letter-spacing: 0.01em; white-space: nowrap; }
-
-.tabs { display: flex; align-items: center; gap: 4px; overflow-x: auto; scrollbar-width: none; }
-.tabs::-webkit-scrollbar { display: none; }
-.tab { padding: 5px 12px; border-radius: 999px; color: var(--muted); font-size: 14px; white-space: nowrap; }
-.tab:hover { color: var(--text); background: var(--fill); }
-.tab[aria-selected="true"] { color: var(--text); background: var(--fill-strong); font-weight: 600; }
-
-.panel { padding: 48px 0 72px; }
-.panel-title { font-size: 24px; font-weight: 650; letter-spacing: -0.01em; margin-bottom: 26px; }
-
-.site-footer { border-top: 1px solid var(--hairline); padding: 40px 0 56px; }
-.footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
-.footer-inner .slogan { font-size: 16px; font-weight: 500; color: var(--text); }
-.footer-links { display: flex; gap: 20px; }
-.footer-links a {
-  font-size: 14px; color: var(--muted);
-  text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px;
+@supports (backdrop-filter: blur(12px)) {
+  .site-header {
+    background: var(--header-bg);
+    backdrop-filter: saturate(180%) blur(14px);
+  }
 }
-.footer-links a:hover { color: var(--text); }
+.site-header.is-stuck { border-bottom-color: var(--hairline); }
 
-@media (max-width: 640px) {
-  .wrap { padding: 0 18px; }
-  .panel { padding: 32px 0 56px; }
-  .header-inner { gap: 10px; }
-  .footer-inner { flex-direction: column; align-items: flex-start; gap: 12px; }
+.header-inner {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  height: 64px;
 }
+
+.brand {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  justify-self: start;
+}
+
+.tabs { display: flex; align-items: center; gap: 22px; justify-self: center; }
+
+#theme-toggle { justify-self: end; }
+
+/* ---------- 主体 ---------- */
+.panel { padding: 64px 0 96px; }
+
+.section { margin-top: 76px; }
+.section:first-child { margin-top: 0; }
+
+.section-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 22px;
+}
+.section-intro { margin: -12px 0 26px; color: var(--muted); }
+
+/* ---------- footer ---------- */
+.site-footer { border-top: 1px solid var(--hairline); }
+.footer-inner { padding: 34px 0 52px; }
+.footer-inner .slogan { font-size: 15.5px; font-weight: 700; letter-spacing: 0.01em; }
+.footer-inner .copyright { margin-top: 6px; font-size: 13.5px; color: var(--light); }

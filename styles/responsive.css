@@ -1,9 +1,70 @@
-@media (max-width: 640px) {
-  .hero { grid-template-columns: minmax(0, 1fr) 96px; gap: 18px; }
+@media (max-width: 860px) {
+  .hero { gap: 32px; grid-template-columns: minmax(0, 1fr) 170px; }
+  .hero h1 { font-size: 31px; }
+  .hero-photo { width: 170px; }
+}
+
+@media (max-width: 680px) {
+  .wrap { padding: 0 20px; }
+
+  /* header：品牌 + 主题按钮一行，Tab 单独一行 */
+  .header-inner {
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "brand theme" "tabs tabs";
+    height: auto;
+    padding: 12px 0 2px;
+    row-gap: 2px;
+  }
+  .brand { grid-area: brand; }
+  #theme-toggle { grid-area: theme; }
+  .tabs {
+    grid-area: tabs;
+    justify-self: start;
+    gap: 20px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 6px;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+
+  .panel { padding: 40px 0 72px; }
+  .section { margin-top: 56px; }
+  .section-title { font-size: 20px; margin-bottom: 18px; }
+
+  /* hero：文字在上，头像在下居左 */
+  .hero {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    padding: 16px 0 8px;
+  }
   .hero h1 { font-size: 25px; }
-  .hero .summary, .hero .belief { font-size: 15px; }
-  .hero-photo { width: 96px; height: 128px; }
-  .panel-title { font-size: 21px; }
-  .tab { padding: 5px 10px; font-size: 13px; }
-  .thought-title { font-size: 16px; }
+  .hero-line { font-size: 15.5px; }
+  .hero-actions { margin-top: 24px; gap: 10px; }
+  .pill { padding: 11px 20px; font-size: 15px; }
+  .hero-photo {
+    order: -1;
+    width: 108px;
+    justify-self: start;
+  }
+
+  .exp { padding-bottom: 28px; }
+  .exp + .exp { padding-top: 28px; }
+  .exp-head { font-size: 16px; }
+  .exp-head { flex-direction: column; align-items: flex-start; gap: 2px; }
+
+  /* 行列表改为上下堆叠 */
+  .row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 18px 0;
+  }
+  .row-desc { text-align: left; font-size: 14.5px; }
+  .cards { grid-template-columns: 1fr; }
+
+  .thought summary { gap: 14px; align-items: flex-start; padding: 18px 0; }
+  .thought-title { font-size: 15.5px; }
+  .thought-meta { padding-top: 2px; }
+
+  .toast { bottom: 18px; }
 }

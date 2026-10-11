@@ -3,7 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="王曼鹂的个人主页：关于我、经历、作品与产品笔记。" />
+  <meta name="description" content="王曼鹂的个人主页：经历、作品与笔记。C 端产品经理，做过出海订阅产品。" />
+  <meta name="theme-color" content="#f8f9fa" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#0c0d10" media="(prefers-color-scheme: dark)" />
+  <meta property="og:type" content="profile" />
+  <meta property="og:title" content="王曼鹂 · C 端产品经理" />
+  <meta property="og:description" content="做出海订阅产品。经历、作品与笔记。" />
   <title>经历 · 王曼鹂</title>
   <link rel="stylesheet" href="styles/tokens.css" />
   <link rel="stylesheet" href="styles/base.css" />
@@ -11,16 +16,27 @@
   <link rel="stylesheet" href="styles/components.css" />
   <link rel="stylesheet" href="styles/responsive.css" />
   <script>
+    /* 首屏前定主题，避免闪白：优先用户选择，其次跟随系统 */
     (function () {
-      var t = localStorage.getItem('theme');
-      if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+      try {
+        var t = localStorage.getItem('theme');
+        if (!t) t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
     })();
   </script>
 </head>
 <body>
-  <header id="site-header"></header>
-  <main id="app"></main>
-  <footer id="site-footer"></footer>
+  <a class="skip-link" href="#main">跳到主要内容</a>
+
+  <header id="site-header" class="site-header"></header>
+
+  <main id="main" class="main"></main>
+
+  <footer id="site-footer" class="site-footer"></footer>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
   <script src="js/data.js"></script>
   <script src="js/main.js"></script>
 </body>

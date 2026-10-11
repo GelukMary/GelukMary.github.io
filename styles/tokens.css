@@ -1,27 +1,36 @@
 :root {
-  --accent: #0c0d10;
-  --bg: #fafbfc;
+  --bg: #f8f9fa;
   --surface: #ffffff;
-  --text: #0c0d10;
-  --muted: #5e5f66;
-  --light: #8a8b90;
-  --fill: rgba(12, 13, 16, 0.04);
-  --fill-strong: rgba(12, 13, 16, 0.08);
-  --hairline: rgba(12, 13, 16, 0.08);
-  --radius: 14px;
-  --max: 760px;
-  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --text: #15161a;
+  --muted: #62636a;
+  --body: #43444a;
+  --light: #9a9ba1;
+  --fill: rgba(21, 22, 26, 0.05);
+  --fill-strong: rgba(21, 22, 26, 0.09);
+  --hairline: rgba(21, 22, 26, 0.08);
+  --header-bg: rgba(248, 249, 250, 0.82);
+
+  --radius: 12px;
+  --max: 840px;
+  --ease: cubic-bezier(0.22, 0.61, 0.24, 1);
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
   color-scheme: light;
 }
 
 :root[data-theme="dark"] {
   --bg: #0c0d10;
-  --surface: #121317;
-  --text: #f2f2f3;
-  --muted: #9a9a9e;
-  --light: #737377;
+  --surface: #141519;
+  --text: #f1f1f3;
+  --muted: #9c9da3;
+  --body: #c9cad0;
+  --light: #6e6f75;
   --fill: rgba(255, 255, 255, 0.06);
   --fill-strong: rgba(255, 255, 255, 0.12);
-  --hairline: rgba(255, 255, 255, 0.12);
+  --hairline: rgba(255, 255, 255, 0.1);
+  --header-bg: rgba(12, 13, 16, 0.78);
+
   color-scheme: dark;
 }
