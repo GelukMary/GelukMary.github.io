@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>用户增长实验Lab · 王曼鹂</title>
+<style>
+:root{--bg:#f8f9fa;--surface:#fff;--text:#15161a;--muted:#62636a;--light:#9a9ba1;--line:rgba(21,22,26,.08);--fill:rgba(21,22,26,.05);--fill-strong:rgba(21,22,26,.09);--accent:#1f6feb;--radius:14px}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;font-size:15px;line-height:1.75;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+header.site{border-bottom:1px solid var(--line);background:var(--surface)}
+.top{display:flex;align-items:center;justify-content:space-between;height:56px}
+.top .back{color:var(--muted);font-size:14px}
+h1{font-size:26px;margin:32px 0 6px;letter-spacing:-.01em}
+.sub{color:var(--muted);margin:0 0 24px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;margin-bottom:16px}
+.card h2{font-size:17px;margin:0 0 8px}
+.hint{font-size:13px;color:var(--light);margin:0 0 14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+.param{margin-bottom:10px}
+.param label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:3px}
+.param input,.param select,.param textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#fff;font-family:inherit}
+.param textarea{min-height:72px;resize:vertical}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{color:var(--muted);font-weight:600;background:var(--fill)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+input.cell,select.cell{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:8px;font-size:13.5px}
+td.calc{font-variant-numeric:tabular-nums;color:var(--text);white-space:nowrap}
+td.metrics{font-size:13px;line-height:1.6;color:var(--muted)}
+.tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
+.tools input[type=text]{flex:1;min-width:150px;padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-size:13.5px}
+.tools select{padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-size:13.5px}
+.btn{padding:8px 16px;border:1px solid var(--text);background:var(--text);color:var(--bg);border-radius:999px;font-size:13.5px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--text);border-color:var(--line)}
+.btn.tiny{padding:4px 10px;font-size:12.5px}
+.count{font-size:12.5px;color:var(--light)}
+.tpl{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+footer{border-top:1px solid var(--line);margin-top:40px;padding:28px 0 48px;color:var(--light);font-size:13px}
+</style>
+</head>
+<body>
+<header class="site"><div class="wrap top"><a class="back" href="../index.html">← 王曼鹂</a><span style="font-size:13px;color:var(--light)">增长实验笔记本</span></div></header>
+<main class="wrap">
+  <h1>用户增长实验Lab</h1>
+
+  <section class="card">
+    <h2>1. 实验信息</h2>
+    <div class="grid2">
+      <div class="param"><label>实验名称</label><input type="text" id="name" placeholder="例：新用户偏好选择实验" /></div>
+      <div class="param"><label>时间范围</label><input type="text" id="period" placeholder="例：9/1–9/30" /></div>
+      <div class="param"><label>人群</label><input type="text" id="audience" placeholder="例：新注册未听歌用户" /></div>
+      <div class="param"><label>改了什么</label><input type="text" id="change" placeholder="例：注册后加 3 步偏好选择" /></div>
+      <div class="param" style="grid-column:1/-1"><label>实验假设</label><input type="text" id="hypothesis" placeholder="例：选完偏好后推专属歌单，能提升 D1 留存" /></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>2. 实验指标</h2>
+    <p class="hint">指标名称、口径、单位待填写，可点击下方 拉新/留存/召回/转化 用模板快速起一版，再自己增删改。百分比类的数字直接填数值（填 3.2 表示 3.2%），差异按百分点 pp 显示。</p>
+    <table>
+      <thead><tr><th style="width:22%">指标</th><th style="width:26%">口径（怎么算）</th><th style="width:12%">单位</th><th class="num" style="width:12%">对照组</th><th class="num" style="width:12%">实验组</th><th class="num" style="width:10%">差异</th><th class="num" style="width:10%">相对差</th><th></th></tr></thead>
+      <tbody id="metricBody"></tbody>
+    </table>
+    <div class="tools">
+      <button class="btn ghost" id="addMetric">+ 添加指标</button>
+      <span class="count">模板：</span>
+      <button class="btn ghost" data-tpl="acquisition">拉新</button>
+      <button class="btn ghost" data-tpl="retention">留存</button>
+      <button class="btn ghost" data-tpl="recall">召回</button>
+      <button class="btn ghost" data-tpl="conversion">转化</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>3. 结论</h2>
+    <div class="grid2">
+      <div class="param"><label>结论</label><textarea id="conclusion" placeholder="这次实验说明了什么？哪些数据支持这个结论？"></textarea></div>
+      <div class="param"><label>下一步</label><textarea id="next" placeholder="全量 / 继续观察 / 停止，接下来做什么"></textarea></div>
+      <div class="param"><label>决定</label>
+        <select id="decision">
+          <option>待定</option>
+          <option>可以全量</option>
+          <option>继续观察</option>
+          <option>停止</option>
+        </select>
+      </div>
+      <div class="param"><label>哪些指标不能变差</label><input type="text" id="guardrail" placeholder="例：卸载率、负向反馈" /></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>4. 保存记录</h2>
+    <div class="tools">
+      <input type="text" id="note" placeholder="备注（可选）" />
+      <button class="btn" id="saveBtn">保存本次实验记录</button>
+      <button class="btn ghost" id="exportBtn">导出 CSV</button>
+      <button class="btn ghost" id="clearBtn">清空全部</button>
+      <span class="count" id="count">共 0 条</span>
+      <span class="count" id="cloudStatus">本地保存</span>
+    </div>
+    <table style="margin-top:14px">
+      <thead><tr><th>实验名称</th><th>时间</th><th>决定</th><th>指标（对照组 → 实验组）</th><th>结论摘要</th><th style="width:120px"></th></tr></thead>
+      <tbody id="recordBody"></tbody>
+    </table>
+  </section>
+</main>
+<footer><div class="wrap">王曼鹂 · 增长实验Lab · 数据可存本地/上云</div></footer>
+
+<script src="config.js"></script>
+<script>
+function el(id){ return document.getElementById(id); }
+var UNITS = ['百分比','数量','金额','时长'];
+var TEMPLATES = {
+  acquisition: [
+    { name:'点击率', unit:'百分比', def:'点击量 ÷ 曝光量' },
+    { name:'安装率', unit:'百分比', def:'安装量 ÷ 点击量' },
+    { name:'激活率', unit:'百分比', def:'激活量 ÷ 安装量' },
+    { name:'D0 留存', unit:'百分比', def:'当日留存用户数 ÷ 激活用户数' },
+    { name:'D1 留存', unit:'百分比', def:'次日留存用户数 ÷ 激活用户数' },
+    { name:'单个激活成本', unit:'金额', def:'投放花费 ÷ 激活用户数' }
+  ],
+  retention: [
+    { name:'D0 留存', unit:'百分比', def:'D0 留存用户数 ÷ 新增用户数' },
+    { name:'D1 留存', unit:'百分比', def:'D1 留存用户数 ÷ 新增用户数' },
+    { name:'D3 留存', unit:'百分比', def:'D3 留存用户数 ÷ 新增用户数' },
+    { name:'D7 留存', unit:'百分比', def:'D7 留存用户数 ÷ 新增用户数' },
+    { name:'D14 留存', unit:'百分比', def:'D14 留存用户数 ÷ 新增用户数' },
+    { name:'D30 留存', unit:'百分比', def:'D30 留存用户数 ÷ 新增用户数' },
+    { name:'付费用户占比', unit:'百分比', def:'付费用户数 ÷ 新增用户数' },
+    { name:'付费用户 D7 留存', unit:'百分比', def:'付费用户 D7 留存数 ÷ 付费用户数' },
+    { name:'人均活跃天数', unit:'数量', def:'活跃天数总和 ÷ 新增用户数' },
+    { name:'习惯用户占比', unit:'百分比', def:'7 日内活跃 ≥3 天用户数 ÷ 新增用户数' }
+  ],
+  recall: [
+    { name:'打开率', unit:'百分比', def:'打开人数 ÷ 触达人数' },
+    { name:'回访率', unit:'百分比', def:'回访人数 ÷ 打开人数' },
+    { name:'回访当日留存', unit:'百分比', def:'回访当日留存人数 ÷ 回访人数' },
+    { name:'回访后 D1 留存', unit:'百分比', def:'回访后 D1 留存人数 ÷ 回访人数' },
+    { name:'退订率', unit:'百分比', def:'退订人数 ÷ 触达人数' }
+  ],
+  conversion: [
+    { name:'点击率', unit:'百分比', def:'点击人数 ÷ 进入页面人数' },
+    { name:'试用率', unit:'百分比', def:'试用人数 ÷ 进入页面人数' },
+    { name:'付费转化率', unit:'百分比', def:'付费人数 ÷ 进入页面人数' },
+    { name:'ARPPU', unit:'金额', def:'收入 ÷ 付费人数' },
+    { name:'退款率', unit:'百分比', def:'退款人数 ÷ 付费人数' }
+  ]
+};
+
+var records = [];
+try { records = JSON.parse(localStorage.getItem('growth_note_records_v1') || '[]') || []; } catch(e){ records = []; }
+var cloud = (window.LAB_SUPABASE && window.LAB_SUPABASE.url && (window.LAB_SUPABASE.publishableKey || window.LAB_SUPABASE.anonKey)) ? window.LAB_SUPABASE : null;
+var cloudKey = cloud ? (cloud.publishableKey || cloud.anonKey) : '';
+var TABLE = 'growth_lab_records';
+
+function cloudHeaders(extra){
+  var h = { apikey: cloudKey, Authorization: 'Bearer ' + cloudKey, 'Content-Type': 'application/json' };
+  if (extra) for (var k in extra) h[k] = extra[k];
+  return h;
+}
+function setCloudStatus(ok, msg){
+  var e = el('cloudStatus'); if (!e) return;
+  if (!cloud) { e.textContent = '本地保存'; return; }
+  e.textContent = ok === false ? (msg || '云端失败·本地保存') : '云端已连接';
+}
+function saveLocal(){ try { localStorage.setItem('growth_note_records_v1', JSON.stringify(records)); } catch(e){} }
+function ensureUid(r){ if (!r.uid) r.uid = 'u' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); return r; }
+function mergeRecords(cloudRecs){
+  var map = {};
+  records.forEach(function(r){ ensureUid(r); map[r.uid] = r; });
+  (cloudRecs || []).forEach(function(r){ ensureUid(r); map[r.uid] = r; });
+  var list = []; for (var k in map) list.push(map[k]);
+  list.sort(function(a, b){ return (b.savedAt || 0) - (a.savedAt || 0); });
+  records = list;
+}
+
+
+function metricRowHTML(m){
+  m = m || { name:'', def:'', unit:'百分比' };
+  return '<tr>' +
+    '<td><input class="cell" data-f="name" value="' + (m.name || '').replace(/"/g,'&quot;') + '" placeholder="指标名称" /></td>' +
+    '<td><input class="cell" data-f="def" value="' + (m.def || '').replace(/"/g,'&quot;') + '" placeholder="怎么算" /></td>' +
+    '<td><select class="cell" data-f="unit">' + UNITS.map(function(u){ return '<option' + (u === m.unit ? ' selected' : '') + '>' + u + '</option>'; }).join('') + '</select></td>' +
+    '<td class="num"><input class="cell" data-f="c" type="number" placeholder="0" style="text-align:right" /></td>' +
+    '<td class="num"><input class="cell" data-f="t" type="number" placeholder="0" style="text-align:right" /></td>' +
+    '<td class="calc" data-calc>—</td>' +
+    '<td class="calc" data-rel>—</td>' +
+    '<td><button class="btn ghost tiny" data-del>删除</button></td></tr>';
+}
+function addMetricRow(m){ el('metricBody').insertAdjacentHTML('beforeend', metricRowHTML(m)); }
+function readMetrics(){
+  return Array.prototype.map.call(el('metricBody').querySelectorAll('tr'), function(tr){
+    var g = function(f){ var e = tr.querySelector('[data-f="' + f + '"]'); return e ? e.value : ''; };
+    var c = parseFloat(g('c')), t = parseFloat(g('t'));
+    var unit = g('unit');
+    var diff = '—';
+    if (isFinite(c) && isFinite(t)) {
+      if (unit === '百分比') diff = (t - c >= 0 ? '+' : '') + (Math.round((t - c) * 100) / 100) + 'pp';
+      else if (unit === '金额') diff = (t - c >= 0 ? '+¥' : '-¥') + Math.abs(Math.round((t - c) * 100) / 100);
+      else if (unit === '时长') diff = (t - c >= 0 ? '+' : '') + (Math.round((t - c) * 100) / 100) + ' 天/次';
+      else diff = (t - c >= 0 ? '+' : '') + (Math.round((t - c) * 100) / 100);
+    }
+    var rel = (isFinite(c) && isFinite(t) && c !== 0) ? ((t - c) / c * 100) : NaN;
+    return { name: g('name') || '未命名指标', def: g('def'), unit: unit, control: isFinite(c) ? c : '', treatment: isFinite(t) ? t : '', diff: diff,
+      rel: isFinite(rel) ? ((rel >= 0 ? '+' : '') + (Math.round(rel * 10) / 10) + '%') : '—' };
+  });
+}
+function refreshRow(tr){
+  var cell = tr.querySelector('[data-calc]');
+  var relCell = tr.querySelector('[data-rel]');
+  var g = function(f){ var e = tr.querySelector('[data-f="' + f + '"]'); return e ? e.value : ''; };
+  var c = parseFloat(g('c')), t = parseFloat(g('t')), unit = g('unit');
+  if (!isFinite(c) || !isFinite(t)) { cell.textContent = '—'; if (relCell) relCell.textContent = '—'; return; }
+  if (relCell) {
+    var rel = c !== 0 ? (t - c) / c * 100 : NaN;
+    relCell.textContent = isFinite(rel) ? ((rel >= 0 ? '+' : '') + (Math.round(rel * 10) / 10) + '%') : '—';
+  }
+  if (unit === '百分比') cell.textContent = (t - c >= 0 ? '+' : '') + (Math.round((t - c) * 100) / 100) + 'pp';
+  else if (unit === '金额') cell.textContent = (t - c >= 0 ? '+¥' : '-¥') + Math.abs(Math.round((t - c) * 100) / 100);
+  else if (unit === '时长') cell.textContent = (t - c >= 0 ? '+' : '') + (Math.round((t - c) * 100) / 100) + ' 天/次';
+  else cell.textContent = (t - c >= 0 ? '+' : '') + (Math.round((t - c) * 100) / 100);
+}
+el('metricBody').addEventListener('input', function(e){
+  var tr = e.target.closest('tr'); if (tr) refreshRow(tr);
+});
+el('metricBody').addEventListener('change', function(e){
+  var tr = e.target.closest('tr'); if (tr) refreshRow(tr);
+});
+el('metricBody').addEventListener('click', function(e){
+  if (e.target.hasAttribute('data-del')) { var tr = e.target.closest('tr'); tr.parentNode.removeChild(tr); }
+});
+el('addMetric').addEventListener('click', function(){ addMetricRow(); });
+document.querySelectorAll('[data-tpl]').forEach(function(b){
+  b.addEventListener('click', function(){
+    (TEMPLATES[b.dataset.tpl] || []).forEach(function(m){ addMetricRow(m); });
+  });
+});
+
+function collectRecord(){
+  return {
+    uid: 'u' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+    savedAt: Date.now(),
+    name: el('name').value.trim(), period: el('period').value.trim(), audience: el('audience').value.trim(),
+    change: el('change').value.trim(), hypothesis: el('hypothesis').value.trim(),
+    conclusion: el('conclusion').value.trim(), next: el('next').value.trim(),
+    decision: el('decision').value, guardrail: el('guardrail').value.trim(), note: el('note').value.trim(),
+    metrics: readMetrics(), created: new Date().toISOString().slice(0, 10)
+  };
+}
+function clearForm(){
+  ['name','period','audience','change','hypothesis','conclusion','next','guardrail','note'].forEach(function(id){ el(id).value = ''; });
+  el('decision').value = '待定'; el('metricBody').innerHTML = '';
+}
+function saveRecord(){
+  var rec = collectRecord();
+  if (!rec.name) { alert('先写实验名称'); return; }
+  records.push(rec); saveLocal(); renderRecords();
+  if (cloud) {
+    var payload = JSON.parse(JSON.stringify(rec));
+    fetch(cloud.url.replace(/\/$/, '') + '/rest/v1/' + TABLE, {
+      method:'POST', headers: cloudHeaders({ Prefer:'return=minimal' }),
+      body: JSON.stringify({ period: rec.period, note: rec.note, payload: payload })
+    }).then(function(r){ if (!r.ok) throw new Error(r.status); return loadCloud(); }).catch(function(){ setCloudStatus(false, '云端保存失败（检查建表/RLS）·本地已保存'); });
+  }
+  clearForm();
+}
+function loadIntoForm(r){
+  el('name').value = r.name || ''; el('period').value = r.period || ''; el('audience').value = r.audience || '';
+  el('change').value = r.change || ''; el('hypothesis').value = r.hypothesis || '';
+  el('conclusion').value = r.conclusion || ''; el('next').value = r.next || '';
+  el('decision').value = r.decision || '待定'; el('guardrail').value = r.guardrail || ''; el('note').value = r.note || '';
+  el('metricBody').innerHTML = '';
+  (r.metrics || []).forEach(function(m){
+    addMetricRow(m);
+    var tr = el('metricBody').lastElementChild;
+    tr.querySelector('[data-f="c"]').value = m.control;
+    tr.querySelector('[data-f="t"]').value = m.treatment;
+    refreshRow(tr);
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function renderRecords(){
+  el('recordBody').innerHTML = records.length ? records.map(function(r,i){
+    var summary = (r.conclusion || '').slice(0, 40) || '—';
+    var metricLines = (r.metrics || []).filter(function(m){ return m.name; }).map(function(m){
+      return m.name + ' ' + (m.control === '' ? '—' : m.control) + ' → ' + (m.treatment === '' ? '—' : m.treatment) +
+        '（' + (m.diff || '—') + (m.rel && m.rel !== '—' ? '，' + m.rel : '') + '）';
+    }).join('<br />') || '—';
+    return '<tr><td>' + r.name + '</td><td>' + (r.period || '—') + '</td><td>' + r.decision + '</td><td class="metrics">' + metricLines + '</td><td>' + summary +
+      '</td><td><button class="btn ghost tiny" data-load="' + i + '">载入</button> ' +
+      '<button class="btn ghost tiny" data-del="' + i + '">删除</button></td></tr>';
+  }).join("") : '<tr><td colspan="6" style="color:var(--light)">还没有记录。</td></tr>';
+  el('count').textContent = '共 ' + records.length + ' 条';
+  Array.prototype.forEach.call(el('recordBody').querySelectorAll('button[data-del]'), function(b){
+    b.addEventListener('click', function(){
+      var idx = parseInt(b.getAttribute('data-del'), 10), rec = records[idx];
+      records.splice(idx, 1); saveLocal(); renderRecords();
+      if (cloud && rec && rec._id) fetch(cloud.url.replace(/\/$/, '') + '/rest/v1/' + TABLE + '?id=eq.' + rec._id, { method:'DELETE', headers: cloudHeaders() }).catch(function(){});
+    });
+  });
+  Array.prototype.forEach.call(el('recordBody').querySelectorAll('button[data-load]'), function(b){
+    b.addEventListener('click', function(){ loadIntoForm(records[parseInt(b.getAttribute('data-load'), 10)]); });
+  });
+}
+function loadCloud(){
+  if (!cloud) { setCloudStatus(); renderRecords(); return; }
+  fetch(cloud.url.replace(/\/$/, '') + '/rest/v1/' + TABLE + '?select=id,payload&order=created_at.desc&limit=500', { headers: cloudHeaders() })
+    .then(function(r){ if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function(rows){ var cloudRecs = rows.map(function(x){ var d = x.payload || {}; d._id = x.id; return d; }); mergeRecords(cloudRecs); saveLocal(); setCloudStatus(true); renderRecords(); })
+    .catch(function(){ setCloudStatus(false, '云端读取失败·本地保存'); renderRecords(); });
+}
+function exportCsv(){
+  if (!records.length) { alert('还没有可导出的记录'); return; }
+  var head = ['实验名称','时间','人群','改了什么','假设','指标','口径','单位','对照组','实验组','差异','相对差','结论','决定','下一步','护栏','备注','记录日期'];
+  var lines = [head];
+  records.forEach(function(r){
+    if (!r.metrics || !r.metrics.length) { lines.push([r.name, r.period, r.audience, r.change, r.hypothesis, '', '', '', '', '', '', '', r.conclusion, r.decision, r.next, r.guardrail, r.note, r.created]); return; }
+    r.metrics.forEach(function(m){ lines.push([r.name, r.period, r.audience, r.change, r.hypothesis, m.name, m.def, m.unit, m.control, m.treatment, m.diff, m.rel, r.conclusion, r.decision, r.next, r.guardrail, r.note, r.created]); });
+  });
+  var csv = '\ufeff' + lines.map(function(row){ return row.map(function(x){ return '"' + String(x == null ? '' : x).replace(/"/g,'""') + '"'; }).join(','); }).join('\r\n');
+  var blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = '增长实验笔记.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href);
+}
+el('saveBtn').addEventListener('click', saveRecord);
+el('exportBtn').addEventListener('click', exportCsv);
+el('clearBtn').addEventListener('click', function(){ if (records.length && confirm('确定清空全部记录？')) { records = []; saveLocal(); renderRecords(); } });
+addMetricRow();
+renderRecords();
+loadCloud();
+</script>
+</body>
+</html>
